@@ -23,6 +23,7 @@ from meta import (
 )
 from deck_optimizer import smart_swap, upgrade_optimizer
 from goals import check_badges, update_goal_tracker
+from gc_coach import start_run, record_match, summarize_run, get_gc_decks
 import json
 
 st.title("Clash Royale Analyzer")
@@ -37,7 +38,7 @@ if tag:
         st.error(f"Error fetching data: {e}")
     else:
         record_daily_progress(battles, player.get("trophies", 0))
-        tabs = st.tabs(["Overview", "Events", "Progress", "Benchmarks"])
+        tabs = st.tabs(["Overview", "Events", "Progress", "Benchmarks", "GC Coach"])
         with tabs[0]:
             st.subheader(player.get("name", "Unknown"))
             st.write(f"Trophies: {player.get('trophies', 'N/A')}")
@@ -166,5 +167,33 @@ if tag:
                     st.write(f"Q{q['quartile']}: {q['avg_win_rate']:.0%} win rate")
             except Exception as e:
                 st.error(f"Benchmarks failed: {e}")
+
+        with tabs[4]:
+            st.write("### Grand Challenge Coach")
+            deck_gc = st.text_input("GC Deck (comma separated)", key="gc_deck")
+            if st.button("Start GC Run") and deck_gc:
+                run_id = start_run([c.strip() for c in deck_gc.split(',') if c.strip()])
+                st.session_state["gc_run_id"] = run_id
+                st.success(f"Started run {run_id}")
+            run_id = st.session_state.get("gc_run_id")
+            if run_id:
+                st.write(f"Current Run: {run_id}")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("Record Win"):
+                        record_match(run_id, True, player.get("trophies", 0))
+                with col2:
+                    if st.button("Record Loss"):
+                        record_match(run_id, False, player.get("trophies", 0))
+                summary = summarize_run(run_id)
+                st.write(f"{summary['wins']}/{summary['total']} wins", )
+                st.write(f"Avg Opponent Trophies: {summary['avg_elo']:.0f}")
+            if st.button("Show Top GC Decks"):
+                try:
+                    decks = get_gc_decks(limit=10)
+                    for d in decks:
+                        st.write(d.get("name", "unknown"))
+                except Exception as e:
+                    st.error(f"Failed to fetch GC decks: {e}")
 else:
     st.info("Enter your player tag (without #)")
