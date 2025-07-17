@@ -38,6 +38,11 @@ so no API key is required.  You can override the default instance by setting
 ```bash
 export INVIDIOUS_BASE="https://yewtu.be"
 ```
+To enable meta features like trending decks and quartile benchmarks, create a
+free RoyaleAPI account and export your token as `ROYALEAPI_TOKEN`:
+```bash
+export ROYALEAPI_TOKEN="your-royaleapi-token"
+```
 
 ## Recent Features
 
