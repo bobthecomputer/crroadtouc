@@ -30,9 +30,11 @@ by commas to receive a quick deck score and suggestions.
 
 ## Additional Setup
 
-To enable YouTube video search, create a [YouTube Data API v3](https://developers.google.com/youtube/v3) key and export it:
+Video search now relies on the public [Invidious](https://docs.invidious.io/) API,
+so no API key is required.  You can override the default instance by setting
+`INVIDIOUS_BASE`:
 ```bash
-export YOUTUBE_API_KEY="your-youtube-key"
+export INVIDIOUS_BASE="https://yewtu.be"
 ```
 
 ## Recent Features

@@ -1,37 +1,27 @@
 import os
 import requests
 
-YOUTUBE_API_BASE = "https://www.googleapis.com/youtube/v3"
+
+DEFAULT_INVIDIOUS = "https://yewtu.be"
 
 
-def get_api_key() -> str:
-    key = os.getenv("YOUTUBE_API_KEY")
-    if not key:
-        raise RuntimeError("YOUTUBE_API_KEY environment variable not set")
-    return key
-
-
-def search_videos(query: str, max_results: int = 5) -> list:
-    """Return a list of video dicts with title and url."""
+def search_videos(query: str, max_results: int = 5, base_url: str | None = None) -> list:
+    """Return a list of video dicts using the Invidious API."""
+    base = base_url or os.getenv("INVIDIOUS_BASE", DEFAULT_INVIDIOUS)
     params = {
-        "part": "snippet",
-        "type": "video",
         "q": query,
-        "order": "date",
-        "maxResults": max_results,
-        "key": get_api_key(),
+        "type": "video",
     }
-    resp = requests.get(f"{YOUTUBE_API_BASE}/search", params=params, timeout=10)
+    resp = requests.get(f"{base}/api/v1/search", params=params, timeout=10)
     resp.raise_for_status()
-    items = resp.json().get("items", [])
+    items = resp.json()[:max_results]
     results = []
     for it in items:
-        vid = it.get("id", {}).get("videoId")
+        vid = it.get("videoId")
         if not vid:
             continue
-        snippet = it.get("snippet", {})
-        title = snippet.get("title", "")
-        channel_id = snippet.get("channelId", "")
+        title = it.get("title", "")
+        channel_id = it.get("authorId", "")
         results.append(
             {
                 "title": title,
