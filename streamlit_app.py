@@ -9,6 +9,9 @@ from analysis import (
 )
 from youtube_api import search_videos
 from coach import request_coaching
+from meta import find_matchup_videos, meta_pulse, get_top_decks
+from deck_optimizer import smart_swap, upgrade_optimizer
+from goals import check_badges, update_goal_tracker
 import json
 
 st.title("Clash Royale Analyzer")
@@ -42,6 +45,18 @@ if tag:
                 for v in videos:
                     st.markdown(f"[{v['title']}]({v['url']})")
 
+        st.write("### Match-up Finder")
+        opponent_deck = st.text_input("Opponent deck (comma separated)")
+        if deck_input and opponent_deck:
+            try:
+                first = deck_input.split(',')[0].strip()
+                second = opponent_deck.split(',')[0].strip()
+                mu_videos = find_matchup_videos(first, second)
+                for mv in mu_videos:
+                    st.markdown(f"[{mv['title']}]({mv['url']})")
+            except Exception as e:
+                st.error(f"Match-up search failed: {e}")
+
         deck_input = st.text_input("Deck cards (comma separated)")
         if deck_input:
             cards = [c.strip() for c in deck_input.split(',') if c.strip()]
@@ -54,6 +69,12 @@ if tag:
                     st.write("Tips:")
                     for tip in rating['tips']:
                         st.write(f"- {tip}")
+                if st.button("Smart Swap Suggestions"):
+                    pool = [c['name'] for c in card_data]
+                    fitness = lambda d: compute_deck_rating(d, card_data)["score"]
+                    suggestions = smart_swap(cards, pool, fitness, generations=3)
+                    for s in suggestions:
+                        st.write(f"{s['deck']} → score {s['score']:.1f}")
             except Exception as e:
                 st.error(f"Deck rating failed: {e}")
 
@@ -84,5 +105,18 @@ if tag:
                 st.write(tips)
             except Exception as e:
                 st.error(f"Coaching failed: {e}")
+
+        if st.button("Show Trending Decks"):
+            try:
+                data = meta_pulse(get_top_decks(limit=1000))
+                for d in data:
+                    st.write(d.get("name", "unknown"))
+            except Exception as e:
+                st.error(f"Meta Pulse failed: {e}")
+
+        trophies = player.get("trophies", 0)
+        goals = {"Champion": 7500}
+        update_goal_tracker(goals, trophies)
+        st.write("Badges:", check_badges([trophies], goals))
 else:
     st.info("Enter your player tag (without #)")

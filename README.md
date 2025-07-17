@@ -43,6 +43,10 @@ export YOUTUBE_API_KEY="your-youtube-key"
 - Analyze card cycle to ensure you keep spells, win conditions and anti-air in rotation
 - Compute an aggression ratio for the first minute of play
 - Optional coaching via a locally running Qwen model accessed through Ollama
+- Find pro videos for a specific match-up and filter by channel
+- Show trending decks from RoyaleAPI (Meta Pulse)
+- Suggest deck mutations via Smart Swap and list upgrade priorities
+- Track trophy goals and display earned badges
 
 ## Running Tests
 

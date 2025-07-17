@@ -29,6 +29,14 @@ def search_videos(query: str, max_results: int = 5) -> list:
         vid = it.get("id", {}).get("videoId")
         if not vid:
             continue
-        title = it.get("snippet", {}).get("title", "")
-        results.append({"title": title, "url": f"https://www.youtube.com/watch?v={vid}"})
+        snippet = it.get("snippet", {})
+        title = snippet.get("title", "")
+        channel_id = snippet.get("channelId", "")
+        results.append(
+            {
+                "title": title,
+                "url": f"https://www.youtube.com/watch?v={vid}",
+                "channelId": channel_id,
+            }
+        )
     return results
