@@ -45,6 +45,7 @@ if tag:
                 for v in videos:
                     st.markdown(f"[{v['title']}]({v['url']})")
 
+        deck_input = st.text_input("Your deck (comma separated)")
         st.write("### Match-up Finder")
         opponent_deck = st.text_input("Opponent deck (comma separated)")
         if deck_input and opponent_deck:
@@ -57,7 +58,6 @@ if tag:
             except Exception as e:
                 st.error(f"Match-up search failed: {e}")
 
-        deck_input = st.text_input("Deck cards (comma separated)")
         if deck_input:
             cards = [c.strip() for c in deck_input.split(',') if c.strip()]
             try:
