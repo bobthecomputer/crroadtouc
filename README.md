@@ -24,6 +24,7 @@ This project provides a simple Streamlit application for fetching and analyzing 
 - Display trophy count and recent win rate
 - View raw battle log on demand
 - Rate a custom deck (average elixir and tips)
+- Track daily trophies and win rate
 
 After entering your player tag, you can also paste eight card names separated
 by commas to receive a quick deck score and suggestions.
@@ -51,6 +52,7 @@ export INVIDIOUS_BASE="https://yewtu.be"
 - Recommend an upgrade order by computing ROI for each card
 - Track trophy goals and display earned badges
 - Monitor temporary event performance with a dedicated Events tab
+- Log daily trophy count and win rate in a Progress tab
 
 ## Running Tests
 

@@ -213,3 +213,37 @@ def daily_event_wr(battlelog: List[Dict], days: int = 30) -> List[Dict]:
         wr = rec["wins"] / rec["total"] if rec["total"] else 0
         chart.append({"date": date, "win_rate": wr})
     return chart
+
+
+# --- Daily progress utilities ---
+def record_daily_progress(
+    battlelog: List[Dict], trophies: int, path: str = "progress.json"
+) -> None:
+    """Append today's trophy count and win rate to the progress file."""
+    today = datetime.now(timezone.utc).date().isoformat()
+    wr = compute_win_rate(
+        [b for b in battlelog if b.get("battleTime", "").startswith(today.replace("-", ""))]
+    )
+    entry = {"date": today, "trophies": trophies, "win_rate": wr}
+    try:
+        with open(path) as fh:
+            data = json.load(fh)
+    except Exception:
+        data = []
+    # overwrite if today's entry exists
+    data = [d for d in data if d.get("date") != today]
+    data.append(entry)
+    try:
+        with open(path, "w") as fh:
+            json.dump(sorted(data, key=lambda d: d["date"]), fh)
+    except Exception:
+        pass
+
+
+def load_progress(path: str = "progress.json") -> List[Dict]:
+    """Return list of recorded progress entries."""
+    try:
+        with open(path) as fh:
+            return json.load(fh)
+    except Exception:
+        return []

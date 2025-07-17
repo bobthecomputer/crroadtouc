@@ -8,6 +8,8 @@ from analysis import (
     aggro_meter,
     collect_event_stats,
     daily_event_wr,
+    record_daily_progress,
+    load_progress,
 )
 import pandas as pd
 from youtube_api import search_videos
@@ -28,7 +30,8 @@ if tag:
     except Exception as e:
         st.error(f"Error fetching data: {e}")
     else:
-        tabs = st.tabs(["Overview", "Events"])
+        record_daily_progress(battles, player.get("trophies", 0))
+        tabs = st.tabs(["Overview", "Events", "Progress"])
         with tabs[0]:
             st.subheader(player.get("name", "Unknown"))
             st.write(f"Trophies: {player.get('trophies', 'N/A')}")
@@ -133,5 +136,14 @@ if tag:
             if chart:
                 df = pd.DataFrame(chart)
                 st.line_chart(df.set_index('date'))
+
+        with tabs[2]:
+            st.write("### Daily Progress")
+            progress = load_progress()
+            if progress:
+                df = pd.DataFrame(progress)
+                st.line_chart(df.set_index('date')[['trophies', 'win_rate']])
+            else:
+                st.info("No progress recorded yet.")
 else:
     st.info("Enter your player tag (without #)")

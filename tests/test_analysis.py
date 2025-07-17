@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 from analysis import (
     compute_win_rate,
     compute_deck_rating,
@@ -7,6 +8,8 @@ from analysis import (
     aggro_meter,
     collect_event_stats,
     daily_event_wr,
+    record_daily_progress,
+    load_progress,
 )
 
 
@@ -96,6 +99,20 @@ class AnalysisTests(unittest.TestCase):
         self.assertEqual(stats[0]["wins"], 1)
         wr = daily_event_wr(log, days=1000)
         self.assertTrue(wr)
+
+    def test_record_and_load_progress(self):
+        log = [
+            {
+                "type": "PvP",
+                "team": [{"crowns": 1}],
+                "opponent": [{"crowns": 0}],
+                "battleTime": datetime.utcnow().strftime("%Y%m%dT%H%M%S.000Z"),
+            }
+        ]
+        path = "/tmp/progress.json"
+        record_daily_progress(log, trophies=6000, path=path)
+        data = load_progress(path=path)
+        self.assertTrue(data)
 
 
 if __name__ == "__main__":
