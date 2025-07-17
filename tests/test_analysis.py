@@ -10,6 +10,8 @@ from analysis import (
     daily_event_wr,
     record_daily_progress,
     load_progress,
+    card_cycle_trainer,
+    elixir_diff_timeline,
 )
 
 
@@ -113,6 +115,22 @@ class AnalysisTests(unittest.TestCase):
         record_daily_progress(log, trophies=6000, path=path)
         data = load_progress(path=path)
         self.assertTrue(data)
+
+    def test_card_cycle_trainer(self):
+        deck = ["A", "B", "C", "D", "E", "F", "G", "H"]
+        plays = ["A", "B", "C", "D"]
+        hands = card_cycle_trainer(deck, plays)
+        self.assertEqual(hands[0], ["A", "B", "C", "D"])
+        self.assertEqual(hands[1], ["B", "C", "D", "E"])
+
+    def test_elixir_diff_timeline(self):
+        events = [
+            {"time": 0, "side": "player", "elixir": 2},
+            {"time": 1, "side": "opponent", "elixir": 3},
+            {"time": 4, "side": "player", "elixir": 4},
+        ]
+        timeline = elixir_diff_timeline(events)
+        self.assertAlmostEqual(timeline[-1]["diff"], timeline[-1]["player"] - timeline[-1]["opponent"])
 
 
 if __name__ == "__main__":

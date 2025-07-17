@@ -10,6 +10,8 @@ from analysis import (
     daily_event_wr,
     record_daily_progress,
     load_progress,
+    card_cycle_trainer,
+    elixir_diff_timeline,
 )
 import pandas as pd
 from youtube_api import search_videos
@@ -102,6 +104,22 @@ if tag:
                     st.write("Cycle Coverage:")
                     st.json(cycle)
                     st.write(f"Aggro Ratio (first 60s): {ratio:.2f}")
+
+                    opp_full = st.text_input("Opponent full deck for trainer")
+                    if opp_full:
+                        deck_list = [c.strip() for c in opp_full.split(',') if c.strip()]
+                        opp_plays = [e.get('card') for e in events if e.get('side') == 'opponent']
+                        hands = card_cycle_trainer(deck_list, opp_plays)
+                        if hands:
+                            st.write("Opponent current hand:", ', '.join(hands[-1]))
+
+                    timeline = elixir_diff_timeline(events)
+                    if timeline:
+                        df = pd.DataFrame(timeline)
+                        max_t = int(df['time'].max())
+                        rng = st.slider("Time range", 0, max_t, (0, max_t))
+                        mask = (df['time'] >= rng[0]) & (df['time'] <= rng[1])
+                        st.line_chart(df[mask].set_index('time')['diff'])
                 except Exception as e:
                     st.error(f"Event analysis failed: {e}")
 

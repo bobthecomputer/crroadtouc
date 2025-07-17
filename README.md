@@ -27,6 +27,8 @@ This project provides a simple Streamlit application for fetching and analyzing 
 - Track daily trophies and win rate
 - Compare your stats against global quartile benchmarks
 - Monitor Grand Challenge runs with win tracking and top deck suggestions
+- Predict opponent hand with a card-counting trainer
+- Visualize elixir advantage over time with an interactive slider
 
 After entering your player tag, you can also paste eight card names separated
 by commas to receive a quick deck score and suggestions.
@@ -62,6 +64,7 @@ export ROYALEAPI_TOKEN="your-royaleapi-token"
 - Log daily trophy count and win rate in a Progress tab
 - View quartile benchmarks for top players
 - Track Grand Challenge runs with win/loss recording
+- Card-counting trainer and elixir heatmap for in-depth replays
 
 ## Running Tests
 

@@ -247,3 +247,38 @@ def load_progress(path: str = "progress.json") -> List[Dict]:
             return json.load(fh)
     except Exception:
         return []
+
+
+def card_cycle_trainer(deck: List[str], plays: List[str]) -> List[List[str]]:
+    """Return the hand (first four cards) before each play."""
+    cycle = deck.copy()
+    hands = []
+    for card in plays:
+        hands.append(cycle[:4])
+        if card in cycle:
+            cycle.remove(card)
+            cycle.append(card)
+    return hands
+
+
+ELIXIR_REGEN = 1 / 2.8
+
+def elixir_diff_timeline(events: List[Dict]) -> List[Dict]:
+    """Return timeline of elixir difference (player - opponent)."""
+    events = sorted(events, key=lambda e: e.get("time", 0))
+    player = opp = 5.0
+    t_prev = 0.0
+    timeline = []
+    for e in events:
+        t = float(e.get("time", 0))
+        dt = t - t_prev
+        player = min(10.0, player + dt * ELIXIR_REGEN)
+        opp = min(10.0, opp + dt * ELIXIR_REGEN)
+        spent = float(e.get("elixir", 0))
+        if e.get("side") == "player":
+            player -= spent
+        else:
+            opp -= spent
+        timeline.append({"time": t, "diff": player - opp, "player": player, "opponent": opp})
+        t_prev = t
+    return timeline
