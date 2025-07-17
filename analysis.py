@@ -187,14 +187,14 @@ def collect_event_stats(battlelog: List[Dict], path: str = "event_stats.json") -
 
 def daily_event_wr(battlelog: List[Dict], days: int = 30) -> List[Dict]:
     """Return daily win rate for events in the last `days`."""
-    start = datetime.utcnow() - timedelta(days=days)
+    start = datetime.now(timezone.utc) - timedelta(days=days)
     by_date: Dict[str, Dict[str, int]] = {}
     for battle in battlelog:
         if battle.get("type") == "PvP" or battle.get("type") == "ranked":
             continue
         ts_str = battle.get("battleTime")
         try:
-            ts = datetime.strptime(ts_str, "%Y%m%dT%H%M%S.000Z")
+            ts = datetime.strptime(ts_str, "%Y%m%dT%H%M%S.000Z").replace(tzinfo=timezone.utc)
         except Exception:
             continue
         if ts < start:
