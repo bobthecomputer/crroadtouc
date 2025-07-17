@@ -38,3 +38,34 @@ def compute_deck_rating(deck: List[str], card_data: List[Dict]) -> Dict:
     elif avg < 3:
         tips.append("Deck may lack win conditions; add a heavier card.")
     return {"average_elixir": avg, "score": score, "tips": tips}
+
+from datetime import datetime, timezone
+
+
+def detect_tilt(battlelog: List[Dict], limit: int = 3, minutes: int = 15) -> bool:
+    """Return True if the last `limit` battles are losses within `minutes`."""
+    consecutive = 0
+    first_time = None
+    for battle in battlelog:
+        if battle.get("type") != "PvP":
+            continue
+        team = battle.get("team", [{}])[0]
+        opponent = battle.get("opponent", [{}])[0]
+        if not team or not opponent:
+            continue
+        won = team.get("crowns", 0) > opponent.get("crowns", 0)
+        ts_str = battle.get("battleTime")
+        try:
+            ts = datetime.strptime(ts_str, "%Y%m%dT%H%M%S.000Z").replace(tzinfo=timezone.utc)
+        except Exception:
+            break
+        if not won:
+            if consecutive == 0:
+                first_time = ts
+            consecutive += 1
+            if consecutive >= limit:
+                if (first_time - ts).total_seconds() <= minutes * 60:
+                    return True
+        else:
+            break
+    return False

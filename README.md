@@ -39,3 +39,4 @@ export YOUTUBE_API_KEY="your-youtube-key"
 
 - Search YouTube for matchup videos by entering a custom query
 - Rate a custom deck directly in the app
+- Warn when multiple losses occur in a short time (Tilt Guard)

@@ -1,6 +1,6 @@
 import streamlit as st
 from clash_api import get_player, get_battlelog, get_cards
-from analysis import compute_win_rate, compute_deck_rating
+from analysis import compute_win_rate, compute_deck_rating, detect_tilt
 from youtube_api import search_videos
 
 st.title("Clash Royale Analyzer")
@@ -18,6 +18,8 @@ if tag:
         st.write(f"Trophies: {player.get('trophies', 'N/A')}")
         win_rate = compute_win_rate(battles)
         st.write(f"Recent Win Rate: {win_rate:.0%}")
+        if detect_tilt(battles):
+            st.warning("Tilt detected: multiple losses in a short time. Consider a break.")
         if st.checkbox("Show raw battle log"):
             st.json(battles)
 
