@@ -1,7 +1,15 @@
 import streamlit as st
 from clash_api import get_player, get_battlelog, get_cards
-from analysis import compute_win_rate, compute_deck_rating, detect_tilt
+from analysis import (
+    compute_win_rate,
+    compute_deck_rating,
+    detect_tilt,
+    analyze_cycle,
+    aggro_meter,
+)
 from youtube_api import search_videos
+from coach import request_coaching
+import json
 
 st.title("Clash Royale Analyzer")
 
@@ -48,5 +56,33 @@ if tag:
                         st.write(f"- {tip}")
             except Exception as e:
                 st.error(f"Deck rating failed: {e}")
+
+        event_json = st.text_area("Battle events JSON (optional)")
+        if event_json:
+            try:
+                events = json.loads(event_json)
+                cycle = analyze_cycle(events)
+                ratio = aggro_meter(events)
+                st.write("Cycle Coverage:")
+                st.json(cycle)
+                st.write(f"Aggro Ratio (first 60s): {ratio:.2f}")
+            except Exception as e:
+                st.error(f"Event analysis failed: {e}")
+
+        if st.button("Get Coaching Tips"):
+            insights = {
+                "win_rate": win_rate,
+                "tilt": detect_tilt(battles),
+            }
+            if event_json:
+                insights.update({"aggro": ratio, **cycle})
+            try:
+                tips = request_coaching([
+                    {"role": "system", "content": "Tu es coach Clash Royale."},
+                    {"role": "user", "content": json.dumps(insights)},
+                ])
+                st.write(tips)
+            except Exception as e:
+                st.error(f"Coaching failed: {e}")
 else:
     st.info("Enter your player tag (without #)")

@@ -69,3 +69,75 @@ def detect_tilt(battlelog: List[Dict], limit: int = 3, minutes: int = 15) -> boo
         else:
             break
     return False
+
+# --- Coaching utilities ---
+
+ANTI_AIR = {
+    "archer", "minions", "minion horde", "musketeer", "baby dragon",
+    "inferno dragon", "electro dragon", "wizard", "electro wizard",
+    "flying machine", "hunter", "archer queen", "mega minion",
+    "phoenix", "bats", "firecracker",
+}
+
+SPELLS = {
+    "fireball", "rocket", "lightning", "zap", "arrows", "log",
+    "snowball", "poison", "freeze", "earthquake", "barbarian barrel",
+    "giant snowball",
+}
+
+WIN_CONDITIONS = {
+    "hog rider", "royal giant", "giant", "golem", "graveyard",
+    "balloon", "mega knight", "mortar", "x-bow", "lava hound",
+    "elixir golem", "goblin barrel", "battle ram", "ram rider",
+    "royal hogs", "electro giant", "miner", "skeleton barrel",
+}
+
+
+def classify_card(name: str) -> Dict[str, bool]:
+    n = name.lower()
+    return {
+        "anti_air": n in ANTI_AIR,
+        "spell": n in SPELLS,
+        "wincon": n in WIN_CONDITIONS,
+    }
+
+
+def analyze_cycle(plays: List[Dict[str, str]], window: int = 4) -> Dict[str, bool]:
+    """Check if at any point the player lacks a role in a hand-sized window."""
+    hand: List[str] = []
+    issues = {"anti_air": False, "spell": False, "wincon": False}
+    for play in plays:
+        if play.get("side") != "player":
+            continue
+        card = play.get("card", "").lower()
+        hand.append(card)
+        if len(hand) > window:
+            hand.pop(0)
+        if len(hand) < window:
+            continue
+        roles = {"anti_air": False, "spell": False, "wincon": False}
+        for c in hand:
+            cls = classify_card(c)
+            for k, v in cls.items():
+                if v:
+                    roles[k] = True
+        for k in issues:
+            if not roles[k]:
+                issues[k] = True
+    return {k: not v for k, v in issues.items()}
+
+
+def aggro_meter(events: List[Dict], seconds: int = 60) -> float:
+    """Return ratio of elixir spent by player vs opponent in first `seconds`."""
+    player = 0.0
+    opp = 0.0
+    for e in events:
+        t = e.get("time", 0)
+        if t > seconds:
+            continue
+        elixir = float(e.get("elixir", 0))
+        if e.get("side") == "player":
+            player += elixir
+        elif e.get("side") == "opponent":
+            opp += elixir
+    return player / opp if opp > 0 else float("inf")

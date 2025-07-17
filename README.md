@@ -40,3 +40,13 @@ export YOUTUBE_API_KEY="your-youtube-key"
 - Search YouTube for matchup videos by entering a custom query
 - Rate a custom deck directly in the app
 - Warn when multiple losses occur in a short time (Tilt Guard)
+- Analyze card cycle to ensure you keep spells, win conditions and anti-air in rotation
+- Compute an aggression ratio for the first minute of play
+- Optional coaching via a locally running Qwen model accessed through Ollama
+
+## Running Tests
+
+Use:
+```bash
+python -m unittest discover tests
+```
