@@ -1,6 +1,7 @@
 import streamlit as st
 from clash_api import get_player, get_battlelog
 from analysis import compute_win_rate
+from youtube_api import search_videos
 
 st.title("Clash Royale Analyzer")
 
@@ -19,5 +20,16 @@ if tag:
         st.write(f"Recent Win Rate: {win_rate:.0%}")
         if st.checkbox("Show raw battle log"):
             st.json(battles)
+
+        query = st.text_input("Video search (optional)")
+        if query:
+            try:
+                videos = search_videos(query, max_results=5)
+            except Exception as e:
+                st.error(f"Video search failed: {e}")
+            else:
+                st.write("### Video Results")
+                for v in videos:
+                    st.markdown(f"[{v['title']}]({v['url']})")
 else:
     st.info("Enter your player tag (without #)")

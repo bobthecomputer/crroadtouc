@@ -23,3 +23,14 @@ This project provides a simple Streamlit application for fetching and analyzing 
 - Fetch player information using a tag
 - Display trophy count and recent win rate
 - View raw battle log on demand
+
+## Additional Setup
+
+To enable YouTube video search, create a [YouTube Data API v3](https://developers.google.com/youtube/v3) key and export it:
+```bash
+export YOUTUBE_API_KEY="your-youtube-key"
+```
+
+## New Feature
+
+- Search YouTube for matchup videos by entering a custom query
