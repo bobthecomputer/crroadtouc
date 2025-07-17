@@ -23,6 +23,10 @@ This project provides a simple Streamlit application for fetching and analyzing 
 - Fetch player information using a tag
 - Display trophy count and recent win rate
 - View raw battle log on demand
+- Rate a custom deck (average elixir and tips)
+
+After entering your player tag, you can also paste eight card names separated
+by commas to receive a quick deck score and suggestions.
 
 ## Additional Setup
 
@@ -31,6 +35,7 @@ To enable YouTube video search, create a [YouTube Data API v3](https://developer
 export YOUTUBE_API_KEY="your-youtube-key"
 ```
 
-## New Feature
+## Recent Features
 
 - Search YouTube for matchup videos by entering a custom query
+- Rate a custom deck directly in the app

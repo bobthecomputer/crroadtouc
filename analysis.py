@@ -17,3 +17,24 @@ def compute_win_rate(battlelog: List[Dict]) -> float:
             wins += 1
         total += 1
     return wins / total if total > 0 else 0.0
+
+
+def compute_deck_rating(deck: List[str], card_data: List[Dict]) -> Dict:
+    """Compute average elixir and a simple score with tips."""
+    cost_lookup = {c["name"].lower(): c.get("elixirCost", 0) for c in card_data}
+    total = 0
+    count = 0
+    for name in deck:
+        cost = cost_lookup.get(name.strip().lower())
+        if cost is None:
+            continue
+        total += cost
+        count += 1
+    avg = total / count if count else 0
+    score = max(0.0, min(100.0, 100 - abs(avg - 3.5) * 20))
+    tips = []
+    if avg > 4.5:
+        tips.append("Deck is heavy; consider cheaper cards.")
+    elif avg < 3:
+        tips.append("Deck may lack win conditions; add a heavier card.")
+    return {"average_elixir": avg, "score": score, "tips": tips}

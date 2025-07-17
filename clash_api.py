@@ -23,3 +23,11 @@ def get_battlelog(player_tag: str) -> list:
     resp = requests.get(url, headers=get_auth_headers(), timeout=10)
     resp.raise_for_status()
     return resp.json()
+
+
+def get_cards() -> list:
+    """Return all cards with their stats."""
+    url = f"{API_BASE}/cards"
+    resp = requests.get(url, headers=get_auth_headers(), timeout=10)
+    resp.raise_for_status()
+    return resp.json().get("items", [])
