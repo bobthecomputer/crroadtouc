@@ -26,11 +26,22 @@ def smart_swap(deck: List[str], card_pool: List[str], fitness: Callable[[List[st
 
 
 def upgrade_optimizer(levels: Dict[str, int], costs: Dict[str, int], gold: int) -> List[str]:
-    """Return card names to upgrade for best ROI."""
-    value = {card: (levels[card] + 1) / costs.get(card, 1) for card in levels}
+    """Return card names to upgrade ranked by return on gold investment."""
+    # ROI is approximated as next level value divided by upgrade cost.
+    rois = []
+    for card, level in levels.items():
+        cost = costs.get(card, 0)
+        if cost <= 0:
+            continue
+        roi = (level + 1) / cost
+        rois.append((roi, card))
+
+    # Sort cards by ROI from highest to lowest
+    rois.sort(reverse=True)
+
     picks = []
     remaining = gold
-    for card in sorted(value, key=value.get, reverse=True):
+    for _, card in rois:
         price = costs.get(card, 0)
         if price <= remaining:
             remaining -= price

@@ -46,6 +46,7 @@ export YOUTUBE_API_KEY="your-youtube-key"
 - Find pro videos for a specific match-up and filter by channel
 - Show trending decks from RoyaleAPI (Meta Pulse)
 - Suggest deck mutations via Smart Swap and list upgrade priorities
+- Recommend an upgrade order by computing ROI for each card
 - Track trophy goals and display earned badges
 
 ## Running Tests
