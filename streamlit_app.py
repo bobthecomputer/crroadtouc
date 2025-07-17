@@ -14,7 +14,13 @@ from analysis import (
 import pandas as pd
 from youtube_api import search_videos
 from coach import request_coaching
-from meta import find_matchup_videos, meta_pulse, get_top_decks
+from meta import (
+    find_matchup_videos,
+    meta_pulse,
+    get_top_decks,
+    get_top_players,
+    quartile_benchmarks,
+)
 from deck_optimizer import smart_swap, upgrade_optimizer
 from goals import check_badges, update_goal_tracker
 import json
@@ -31,7 +37,7 @@ if tag:
         st.error(f"Error fetching data: {e}")
     else:
         record_daily_progress(battles, player.get("trophies", 0))
-        tabs = st.tabs(["Overview", "Events", "Progress"])
+        tabs = st.tabs(["Overview", "Events", "Progress", "Benchmarks"])
         with tabs[0]:
             st.subheader(player.get("name", "Unknown"))
             st.write(f"Trophies: {player.get('trophies', 'N/A')}")
@@ -145,5 +151,20 @@ if tag:
                 st.line_chart(df.set_index('date')[['trophies', 'win_rate']])
             else:
                 st.info("No progress recorded yet.")
+
+        with tabs[3]:
+            st.write("### Quartile Benchmarks")
+            try:
+                players = get_top_players(limit=1000)
+                for p in players:
+                    w = p.get('wins', 0)
+                    l = p.get('losses', 0)
+                    total = w + l
+                    p['win_rate'] = w / total if total else 0
+                qs = quartile_benchmarks(players, key='trophies')
+                for q in qs:
+                    st.write(f"Q{q['quartile']}: {q['avg_win_rate']:.0%} win rate")
+            except Exception as e:
+                st.error(f"Benchmarks failed: {e}")
 else:
     st.info("Enter your player tag (without #)")

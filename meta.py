@@ -22,6 +22,18 @@ def get_top_decks(limit: int = 1000) -> List[Dict]:
     return resp.json().get("items", [])
 
 
+def get_top_players(limit: int = 1000) -> List[Dict]:
+    """Return top players from RoyaleAPI."""
+    token = get_api_key()
+    if not token:
+        raise RuntimeError("ROYALEAPI_TOKEN not set")
+    url = f"{ROYALE_API_BASE}/player/top?limit={limit}"
+    headers = {"Authorization": f"Bearer {token}"}
+    resp = requests.get(url, headers=headers, timeout=10)
+    resp.raise_for_status()
+    return resp.json().get("items", [])
+
+
 def meta_pulse(decks: Iterable[Dict], threshold: float = 0.05) -> List[Dict]:
     """Return decks with usage over a threshold."""
     trending = []
@@ -50,3 +62,21 @@ def find_matchup_videos(deck_a: str, deck_b: str, max_results: int = 5) -> List[
         elif any(cid in v.get("channelId", "") for cid in PRO_CHANNELS):
             filtered.append(v)
     return filtered
+
+
+def quartile_benchmarks(players: Iterable[Dict], key: str = "rank_points") -> List[Dict]:
+    """Return average win rate per quartile using the specified key."""
+    items = sorted(players, key=lambda p: p.get(key, 0), reverse=True)
+    n = len(items)
+    if n == 0:
+        return []
+    quartiles = []
+    for i in range(4):
+        start = int(i * n / 4)
+        end = int((i + 1) * n / 4) if i < 3 else n
+        subset = items[start:end]
+        if not subset:
+            continue
+        avg_wr = sum(p.get("win_rate", 0) for p in subset) / len(subset)
+        quartiles.append({"quartile": i + 1, "avg_win_rate": avg_wr})
+    return quartiles

@@ -1,6 +1,6 @@
 import unittest
 import meta
-from meta import meta_pulse, find_matchup_videos
+from meta import meta_pulse, find_matchup_videos, quartile_benchmarks
 
 class MetaTests(unittest.TestCase):
     def test_meta_pulse(self):
@@ -18,6 +18,17 @@ class MetaTests(unittest.TestCase):
         vids = find_matchup_videos("hog", "giant", max_results=1)
         self.assertTrue(vids)
         meta.search_videos = real_search
+
+    def test_quartile_benchmarks(self):
+        players = [
+            {"rank_points": 6000, "win_rate": 0.6},
+            {"rank_points": 5500, "win_rate": 0.55},
+            {"rank_points": 5000, "win_rate": 0.52},
+            {"rank_points": 4500, "win_rate": 0.5},
+        ]
+        qs = quartile_benchmarks(players)
+        self.assertEqual(len(qs), 4)
+        self.assertGreater(qs[0]["avg_win_rate"], qs[-1]["avg_win_rate"])
 
 if __name__ == '__main__':
     unittest.main()
