@@ -3,3 +3,4 @@ streamlit
 ollama
 streamlit-authenticator
 bcrypt
+pandas

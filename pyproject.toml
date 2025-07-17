@@ -15,6 +15,7 @@ dependencies = [
     "ollama",
     "streamlit-authenticator",
     "bcrypt",
+    "pandas",
 ]
 
 [tool.setuptools]
