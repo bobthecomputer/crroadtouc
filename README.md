@@ -48,6 +48,7 @@ export YOUTUBE_API_KEY="your-youtube-key"
 - Suggest deck mutations via Smart Swap and list upgrade priorities
 - Recommend an upgrade order by computing ROI for each card
 - Track trophy goals and display earned badges
+- Monitor temporary event performance with a dedicated Events tab
 
 ## Running Tests
 

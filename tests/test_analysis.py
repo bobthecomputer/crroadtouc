@@ -5,6 +5,8 @@ from analysis import (
     detect_tilt,
     analyze_cycle,
     aggro_meter,
+    collect_event_stats,
+    daily_event_wr,
 )
 
 
@@ -72,6 +74,28 @@ class AnalysisTests(unittest.TestCase):
         ]
         ratio = aggro_meter(events, seconds=30)
         self.assertAlmostEqual(ratio, 7 / 6)
+
+    def test_collect_event_stats_and_daily_wr(self):
+        log = [
+            {
+                "type": "challenge",
+                "battleTime": "20240716T120000.000Z",
+                "eventMode": {"id": 1},
+                "team": [{"crowns": 1, "cards": [{"name": "Knight"}]}],
+                "opponent": [{"crowns": 0}],
+            },
+            {
+                "type": "challenge",
+                "battleTime": "20240716T130000.000Z",
+                "eventMode": {"id": 1},
+                "team": [{"crowns": 0, "cards": [{"name": "Knight"}]}],
+                "opponent": [{"crowns": 1}],
+            },
+        ]
+        stats = collect_event_stats(log, path="/tmp/events.json")
+        self.assertEqual(stats[0]["wins"], 1)
+        wr = daily_event_wr(log, days=1000)
+        self.assertTrue(wr)
 
 
 if __name__ == "__main__":

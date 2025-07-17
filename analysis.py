@@ -141,3 +141,75 @@ def aggro_meter(events: List[Dict], seconds: int = 60) -> float:
         elif e.get("side") == "opponent":
             opp += elixir
     return player / opp if opp > 0 else float("inf")
+
+# --- Event tracker utilities ---
+import json
+from datetime import timedelta
+
+
+def collect_event_stats(battlelog: List[Dict], path: str = "event_stats.json") -> List[Dict]:
+    """Collect win/loss counts for non-ranked modes and persist to JSON."""
+    stats: Dict[str, Dict] = {}
+    for battle in battlelog:
+        if battle.get("type") == "PvP" or battle.get("type") == "ranked":
+            continue
+        event = battle.get("eventMode", {})
+        event_id = str(event.get("id", event.get("name", "unknown")))
+        team = battle.get("team", [{}])[0]
+        opp = battle.get("opponent", [{}])[0]
+        won = team.get("crowns", 0) > opp.get("crowns", 0)
+        entry = stats.setdefault(
+            event_id,
+            {
+                "event_id": event_id,
+                "wins": 0,
+                "losses": 0,
+                "deck": [c.get("name") for c in team.get("cards", [])],
+                "date": battle.get("battleTime"),
+            },
+        )
+        if won:
+            entry["wins"] += 1
+        else:
+            entry["losses"] += 1
+        entry["date"] = battle.get("battleTime")
+    for entry in stats.values():
+        total = entry["wins"] + entry["losses"]
+        entry["WR"] = entry["wins"] / total if total else 0
+    results = list(stats.values())
+    try:
+        with open(path, "w") as fh:
+            json.dump(results, fh)
+    except Exception:
+        pass
+    return results
+
+
+def daily_event_wr(battlelog: List[Dict], days: int = 30) -> List[Dict]:
+    """Return daily win rate for events in the last `days`."""
+    start = datetime.utcnow() - timedelta(days=days)
+    by_date: Dict[str, Dict[str, int]] = {}
+    for battle in battlelog:
+        if battle.get("type") == "PvP" or battle.get("type") == "ranked":
+            continue
+        ts_str = battle.get("battleTime")
+        try:
+            ts = datetime.strptime(ts_str, "%Y%m%dT%H%M%S.000Z")
+        except Exception:
+            continue
+        if ts < start:
+            continue
+        date_key = ts.date().isoformat()
+        team = battle.get("team", [{}])[0]
+        opp = battle.get("opponent", [{}])[0]
+        won = team.get("crowns", 0) > opp.get("crowns", 0)
+        rec = by_date.setdefault(date_key, {"wins": 0, "total": 0})
+        if won:
+            rec["wins"] += 1
+        rec["total"] += 1
+    chart = []
+    for date in sorted(by_date.keys()):
+        rec = by_date[date]
+        wr = rec["wins"] / rec["total"] if rec["total"] else 0
+        chart.append({"date": date, "win_rate": wr})
+    return chart
