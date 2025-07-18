@@ -1,3 +1,6 @@
 requests
 streamlit
 ollama
+streamlit-authenticator
+bcrypt
+pandas

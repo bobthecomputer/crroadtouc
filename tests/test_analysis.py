@@ -1,5 +1,5 @@
 import unittest
-from datetime import datetime
+from datetime import datetime, timezone
 from analysis import (
     compute_win_rate,
     compute_deck_rating,
@@ -10,8 +10,11 @@ from analysis import (
     daily_event_wr,
     record_daily_progress,
     load_progress,
+    progress_to_csv,
+    reset_progress,
     card_cycle_trainer,
     elixir_diff_timeline,
+    classify_playstyle,
 )
 
 
@@ -108,13 +111,22 @@ class AnalysisTests(unittest.TestCase):
                 "type": "PvP",
                 "team": [{"crowns": 1}],
                 "opponent": [{"crowns": 0}],
-                "battleTime": datetime.utcnow().strftime("%Y%m%dT%H%M%S.000Z"),
+                "battleTime": datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S.000Z"),
             }
         ]
         path = "/tmp/progress.json"
-        record_daily_progress(log, trophies=6000, path=path)
+        record_daily_progress(log, trophies=6000, league_rank=10, path=path)
         data = load_progress(path=path)
         self.assertTrue(data)
+
+    def test_reset_and_export_progress(self):
+        path = "/tmp/progress2.json"
+        record_daily_progress([], trophies=5000, league_rank=5, path=path)
+        data = load_progress(path=path)
+        csv = progress_to_csv(data)
+        self.assertIn("date", csv)
+        reset_progress(path=path)
+        self.assertFalse(load_progress(path=path))
 
     def test_card_cycle_trainer(self):
         deck = ["A", "B", "C", "D", "E", "F", "G", "H"]
@@ -131,6 +143,11 @@ class AnalysisTests(unittest.TestCase):
         ]
         timeline = elixir_diff_timeline(events)
         self.assertAlmostEqual(timeline[-1]["diff"], timeline[-1]["player"] - timeline[-1]["opponent"])
+
+    def test_classify_playstyle(self):
+        deck = ["Hog Rider", "Ice Spirit", "Cannon", "Log"]
+        style = classify_playstyle(deck)
+        self.assertIn(style, {"Cycle", "Control", "Beatdown", "Bait", "Siege"})
 
 
 if __name__ == "__main__":

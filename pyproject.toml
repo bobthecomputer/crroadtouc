@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crtool"
+version = "0.1.0"
+description = "Clash Royale analysis utilities"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+dependencies = [
+    "requests",
+    "streamlit",
+    "ollama",
+    "streamlit-authenticator",
+    "bcrypt",
+    "pandas",
+]
+
+[tool.setuptools]
+packages = ["."]

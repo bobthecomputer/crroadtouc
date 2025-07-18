@@ -2,6 +2,8 @@ import json
 import os
 import time
 from typing import List, Dict
+from analysis import classify_playstyle
+import requests
 
 
 def _path(run_id: str) -> str:
@@ -43,18 +45,45 @@ def summarize_run(run_id: str) -> Dict:
     return {"wins": wins, "total": total, "avg_elo": avg_elo}
 
 
-def get_gc_decks(limit: int = 20) -> List[Dict]:
-    """Fetch recent successful GC decks from RoyaleAPI."""
+def get_gc_decks(limit: int = 20, playstyle: str | None = None, min_wr: float = 0.45) -> List[Dict]:
+    """Fetch recent GC decks filtered by win rate and optional playstyle.
+
+    The threshold is the greater of ``min_wr`` and the 75th percentile of
+    win rates among all decks returned by RoyaleAPI.
+    """
     token = os.getenv("ROYALEAPI_TOKEN")
     if not token:
         raise RuntimeError("ROYALEAPI_TOKEN not set")
-    url = (
-        "https://api.royaleapi.com/decks/popular?type=GC&time=7d&limit="
-        f"{limit}"
-    )
+    url = "https://api.royaleapi.com/decks/popular?type=GC&time=7d&limit=100"
     headers = {"Authorization": f"Bearer {token}"}
-    import requests
 
     resp = requests.get(url, headers=headers, timeout=10)
     resp.raise_for_status()
-    return resp.json().get("items", [])
+    items = resp.json().get("items", [])
+
+    win_rates = []
+    for it in items:
+        wr = it.get("winPercent") or it.get("win_pct") or it.get("wr") or 0
+        if wr <= 1:
+            wr *= 100
+        win_rates.append(wr)
+
+    threshold = min_wr * 100 if min_wr <= 1 else min_wr
+    if win_rates:
+        sr = sorted(win_rates)
+        p75 = sr[int(len(sr) * 0.75)]
+        threshold = max(threshold, p75)
+
+    filtered = []
+    for it in items:
+        wr = it.get("winPercent") or it.get("win_pct") or it.get("wr") or 0
+        wr = wr * 100 if wr <= 1 else wr
+        if wr < threshold:
+            continue
+        deck_cards = it.get("cards", [])
+        if playstyle and classify_playstyle(deck_cards) != playstyle:
+            continue
+        filtered.append(it)
+        if len(filtered) >= limit:
+            break
+    return filtered

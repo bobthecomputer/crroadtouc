@@ -34,6 +34,22 @@ def get_top_players(limit: int = 1000) -> List[Dict]:
     return resp.json().get("items", [])
 
 
+def league_benchmarks(league_rank: int, limit: int = 1000) -> Dict:
+    """Return average win rate and popular decks for a league rank."""
+    players = get_top_players(limit=limit)
+    same = [p for p in players if p.get("leagueRank") == league_rank]
+    if not same:
+        return {}
+    for p in same:
+        w = p.get("wins", 0)
+        l = p.get("losses", 0)
+        total = w + l
+        p["win_rate"] = w / total if total else 0
+    avg = sum(p.get("win_rate", 0) for p in same) / len(same)
+    decks = [p.get("currentDeck", {}) for p in same]
+    return {"avg_win_rate": avg, "decks": decks}
+
+
 def meta_pulse(decks: Iterable[Dict], threshold: float = 0.05) -> List[Dict]:
     """Return decks with usage over a threshold."""
     trending = []

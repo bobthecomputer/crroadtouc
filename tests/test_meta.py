@@ -1,6 +1,6 @@
 import unittest
 import meta
-from meta import meta_pulse, find_matchup_videos, quartile_benchmarks
+from meta import meta_pulse, find_matchup_videos, quartile_benchmarks, league_benchmarks
 
 class MetaTests(unittest.TestCase):
     def test_meta_pulse(self):
@@ -29,6 +29,16 @@ class MetaTests(unittest.TestCase):
         qs = quartile_benchmarks(players)
         self.assertEqual(len(qs), 4)
         self.assertGreater(qs[0]["avg_win_rate"], qs[-1]["avg_win_rate"])
+
+    def test_league_benchmarks(self):
+        meta.get_top_players = lambda limit=1000: [
+            {"leagueRank": 10, "wins": 10, "losses": 5, "currentDeck": ["A"]},
+            {"leagueRank": 11, "wins": 8, "losses": 7, "currentDeck": ["B"]},
+        ]
+        data = league_benchmarks(10)
+        self.assertAlmostEqual(data["avg_win_rate"], 10 / 15)
+        self.assertEqual(data["decks"], [["A"]])
+
 
 if __name__ == '__main__':
     unittest.main()

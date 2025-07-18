@@ -1,4 +1,8 @@
 from typing import List, Dict
+import io
+import csv
+from datetime import datetime, timezone, timedelta
+import json
 
 
 def compute_win_rate(battlelog: List[Dict]) -> float:
@@ -38,8 +42,6 @@ def compute_deck_rating(deck: List[str], card_data: List[Dict]) -> Dict:
     elif avg < 3:
         tips.append("Deck may lack win conditions; add a heavier card.")
     return {"average_elixir": avg, "score": score, "tips": tips}
-
-from datetime import datetime, timezone
 
 
 def detect_tilt(battlelog: List[Dict], limit: int = 3, minutes: int = 15) -> bool:
@@ -142,10 +144,32 @@ def aggro_meter(events: List[Dict], seconds: int = 60) -> float:
             opp += elixir
     return player / opp if opp > 0 else float("inf")
 
-# --- Event tracker utilities ---
-import json
-from datetime import timedelta
 
+def classify_playstyle(deck: List[str]) -> str:
+    """Return a simple playstyle category."""
+    avg_cost = 0
+    spells = buildings = wincon = 0
+    for card in deck:
+        c = card.lower()
+        if c in SPELLS:
+            spells += 1
+        if "building" in c:
+            buildings += 1
+        if c in WIN_CONDITIONS:
+            wincon += 1
+        avg_cost += 1
+    avg_cost = avg_cost / len(deck) if deck else 0
+    if buildings > 0 and wincon <= 1:
+        return "Siege"
+    if avg_cost <= 3.0:
+        return "Cycle"
+    if spells >= 3:
+        return "Control"
+    if avg_cost >= 4.0:
+        return "Beatdown"
+    return "Bait"
+
+# --- Event tracker utilities ---
 
 def collect_event_stats(battlelog: List[Dict], path: str = "event_stats.json") -> List[Dict]:
     """Collect win/loss counts for non-ranked modes and persist to JSON."""
@@ -217,14 +241,22 @@ def daily_event_wr(battlelog: List[Dict], days: int = 30) -> List[Dict]:
 
 # --- Daily progress utilities ---
 def record_daily_progress(
-    battlelog: List[Dict], trophies: int, path: str = "progress.json"
+    battlelog: List[Dict],
+    trophies: int,
+    league_rank: int,
+    path: str = "progress.json",
 ) -> None:
-    """Append today's trophy count and win rate to the progress file."""
+    """Append today's trophy count, league rank and win rate to the progress file."""
     today = datetime.now(timezone.utc).date().isoformat()
     wr = compute_win_rate(
         [b for b in battlelog if b.get("battleTime", "").startswith(today.replace("-", ""))]
     )
-    entry = {"date": today, "trophies": trophies, "win_rate": wr}
+    entry = {
+        "date": today,
+        "trophies": trophies,
+        "league_rank": league_rank,
+        "win_rate": wr,
+    }
     try:
         with open(path) as fh:
             data = json.load(fh)
@@ -247,6 +279,26 @@ def load_progress(path: str = "progress.json") -> List[Dict]:
             return json.load(fh)
     except Exception:
         return []
+
+
+def reset_progress(path: str = "progress.json") -> None:
+    """Clear all recorded progress."""
+    try:
+        with open(path, "w") as fh:
+            fh.write("[]")
+    except Exception:
+        pass
+
+
+def progress_to_csv(data: List[Dict]) -> str:
+    """Return CSV representation of progress entries."""
+    if not data:
+        return ""
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["date", "trophies", "league_rank", "win_rate"])
+    writer.writeheader()
+    writer.writerows(data)
+    return output.getvalue()
 
 
 def card_cycle_trainer(deck: List[str], plays: List[str]) -> List[List[str]]:

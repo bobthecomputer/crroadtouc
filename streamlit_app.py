@@ -1,5 +1,10 @@
 import streamlit as st
 from clash_api import get_player, get_battlelog, get_cards
+import pandas as pd
+import json
+
+st.set_page_config(page_title="CR Analyzer", layout="centered")
+
 from analysis import (
     compute_win_rate,
     compute_deck_rating,
@@ -8,29 +13,75 @@ from analysis import (
     aggro_meter,
     collect_event_stats,
     daily_event_wr,
-    record_daily_progress,
     load_progress,
+    record_daily_progress,
     card_cycle_trainer,
     elixir_diff_timeline,
+    classify_playstyle,
+    progress_to_csv,
+    reset_progress,
 )
-import pandas as pd
 from youtube_api import search_videos
-from coach import request_coaching
+from coach import get_tips
 from meta import (
     find_matchup_videos,
     meta_pulse,
     get_top_decks,
     get_top_players,
     quartile_benchmarks,
+    league_benchmarks,
 )
-from deck_optimizer import smart_swap, upgrade_optimizer
+import streamlit_authenticator as stauth
+from auth import (
+    init_db,
+    register_user,
+    get_user,
+    update_playstyle,
+    update_mute_toast,
+    load_credentials,
+)
+from deck_optimizer import smart_swap
+from digest import daily_digest_info
 from goals import check_badges, update_goal_tracker
 from gc_coach import start_run, record_match, summarize_run, get_gc_decks
-import json
+from player_watch import check_new_video, check_deck_change
+from merge_tactics import get_merge_leaderboard, card_tier_list
+
+init_db()
+# This function should exist in your auth.py to load credentials
+# Example: creds = {'usernames': {'johndoe': {'email': 'johndoe@gmail.com', 'name': 'John Doe', 'password': 'hashed_password'}}}
+creds = load_credentials() 
+authenticator = stauth.Authenticate(creds, "crtool", "auth", cookie_expiry_days=7)
+name, auth_status, username = authenticator.login("Login", "main")
+
+if not auth_status:
+    with st.sidebar.expander("Register"):
+        r_email = st.text_input("Email", key="reg_email")
+        r_pw = st.text_input("Password", type="password", key="reg_pw")
+        r_tag = st.text_input("Player Tag", key="reg_tag")
+        r_style = st.selectbox("Playstyle", ["Cycle", "Control", "Beatdown", "Siege", "Bait"], key="reg_style")
+        if st.button("Create Account"):
+            register_user(r_email, r_pw, r_tag, r_style)
+            st.success("Account created. Reload.")
+    st.stop()
+
+user = get_user(username)
+tag = user.get("player_tag", "")
 
 st.title("Clash Royale Analyzer")
 
-tag = st.text_input("Player Tag", key="tag")
+tag = st.text_input("Player Tag", value=tag, key="tag")
+playstyle = st.selectbox(
+    "Playstyle",
+    ["Cycle", "Control", "Beatdown", "Siege", "Bait"],
+    index=0 if user.get("playstyle") is None else ["Cycle", "Control", "Beatdown", "Siege", "Bait"].index(user.get("playstyle")),
+)
+if playstyle != user.get("playstyle"):
+    update_playstyle(user["email"], playstyle)
+
+mute_toast = st.checkbox("Mute daily toast", value=bool(user.get("mute_toast")))
+if mute_toast != bool(user.get("mute_toast")):
+    update_mute_toast(user["email"], mute_toast)
 
 if tag:
     try:
@@ -39,8 +90,17 @@ if tag:
     except Exception as e:
         st.error(f"Error fetching data: {e}")
     else:
-        record_daily_progress(battles, player.get("trophies", 0))
-        tabs = st.tabs(["Overview", "Events", "Progress", "Benchmarks", "GC Coach"])
+        record_daily_progress(battles, player.get("trophies", 0), player.get("leagueRank", 0))
+        digest = daily_digest_info(tag)
+        if digest and not mute_toast:
+            msg = (
+                f"Δ {digest['delta_trophies']} trophies, step {digest['delta_step']} "
+                f"WR 24h {digest['win_rate']:.0%}"
+            )
+            if digest["lucky_drop"]:
+                msg += " Lucky Drop!"
+            st.toast(msg)
+        tabs = st.tabs(["Overview", "Events", "Progress", "Benchmarks", "GC Coach", "Merge Tactics", "Watch"])
         with tabs[0]:
             st.subheader(player.get("name", "Unknown"))
             st.write(f"Trophies: {player.get('trophies', 'N/A')}")
@@ -82,6 +142,10 @@ if tag:
                     rating = compute_deck_rating(cards, card_data)
                     st.write(f"Average Elixir: {rating['average_elixir']:.2f}")
                     st.write(f"Deck Score: {rating['score']:.0f}/100")
+                    detected = classify_playstyle(cards)
+                    st.write(f"Detected playstyle: {detected}")
+                    if detected != playstyle:
+                        st.info(f"Consider switching playstyle to {detected}")
                     if rating['tips']:
                         st.write("Tips:")
                         for tip in rating['tips']:
@@ -131,10 +195,7 @@ if tag:
                 if event_json:
                     insights.update({"aggro": ratio, **cycle})
                 try:
-                    tips = request_coaching([
-                        {"role": "system", "content": "Tu es coach Clash Royale."},
-                        {"role": "user", "content": json.dumps(insights)},
-                    ])
+                    tips = get_tips(insights)
                     st.write(tips)
                 except Exception as e:
                     st.error(f"Coaching failed: {e}")
@@ -168,8 +229,18 @@ if tag:
             if progress:
                 df = pd.DataFrame(progress)
                 st.line_chart(df.set_index('date')[['trophies', 'win_rate']])
+                csv_data = progress_to_csv(progress)
+                st.download_button(
+                    "Export CSV",
+                    data=csv_data,
+                    file_name="progress.csv",
+                    mime="text/csv",
+                )
             else:
                 st.info("No progress recorded yet.")
+            if st.button("Reset History"):
+                reset_progress()
+                st.success("History cleared")
 
         with tabs[3]:
             st.write("### Quartile Benchmarks")
@@ -183,6 +254,9 @@ if tag:
                 qs = quartile_benchmarks(players, key='trophies')
                 for q in qs:
                     st.write(f"Q{q['quartile']}: {q['avg_win_rate']:.0%} win rate")
+                if player.get('leagueRank'):
+                    lb = league_benchmarks(player.get('leagueRank'))
+                    st.write(f"Your league avg WR: {lb.get('avg_win_rate',0):.0%}")
             except Exception as e:
                 st.error(f"Benchmarks failed: {e}")
 
@@ -213,5 +287,35 @@ if tag:
                         st.write(d.get("name", "unknown"))
                 except Exception as e:
                     st.error(f"Failed to fetch GC decks: {e}")
-else:
-    st.info("Enter your player tag (without #)")
+        with tabs[5]:
+            st.write("### Merge Tactics")
+            if st.button("Show Tier List"):
+                try:
+                    stats = get_merge_leaderboard(limit=100)
+                    tier = card_tier_list(stats)
+                    for entry in tier[:10]:
+                        st.write(f"{entry['card']}: {entry['eff']:.2f}")
+                except Exception as e:
+                    st.error(f"Merge data failed: {e}")
+        with tabs[6]:
+            st.write("### Watch")
+            ch_id = st.text_input("YouTube channel ID")
+            if st.button("Check Videos") and ch_id:
+                try:
+                    vid = check_new_video(ch_id)
+                    if vid:
+                        st.success(f"New video: [{vid['title']}]({vid['url']})")
+                    else:
+                        st.info("No new video")
+                except Exception as e:
+                    st.error(f"Video check failed: {e}")
+            watch_tag = st.text_input("Player tag to watch")
+            if st.button("Check Deck") and watch_tag:
+                try:
+                    deck = check_deck_change(watch_tag)
+                    if deck:
+                        st.success("New deck: " + ', '.join(deck))
+                    else:
+                        st.info("No change")
+                except Exception as e:
+                    st.error(f"Deck check failed: {e}")
