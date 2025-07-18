@@ -1,6 +1,8 @@
 from typing import List, Dict
 import io
 import csv
+from datetime import datetime, timezone, timedelta
+import json
 
 
 def compute_win_rate(battlelog: List[Dict]) -> float:
@@ -40,8 +42,6 @@ def compute_deck_rating(deck: List[str], card_data: List[Dict]) -> Dict:
     elif avg < 3:
         tips.append("Deck may lack win conditions; add a heavier card.")
     return {"average_elixir": avg, "score": score, "tips": tips}
-
-from datetime import datetime, timezone
 
 
 def detect_tilt(battlelog: List[Dict], limit: int = 3, minutes: int = 15) -> bool:
@@ -170,9 +170,6 @@ def classify_playstyle(deck: List[str]) -> str:
     return "Bait"
 
 # --- Event tracker utilities ---
-import json
-from datetime import timedelta
-
 
 def collect_event_stats(battlelog: List[Dict], path: str = "event_stats.json") -> List[Dict]:
     """Collect win/loss counts for non-ranked modes and persist to JSON."""

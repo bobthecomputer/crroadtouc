@@ -1,7 +1,10 @@
 import streamlit as st
 from clash_api import get_player, get_battlelog, get_cards
+import pandas as pd
+import json
 
 st.set_page_config(page_title="CR Analyzer", layout="centered")
+
 from analysis import (
     compute_win_rate,
     compute_deck_rating,
@@ -11,10 +14,13 @@ from analysis import (
     collect_event_stats,
     daily_event_wr,
     load_progress,
+    record_daily_progress,
     card_cycle_trainer,
     elixir_diff_timeline,
+    classify_playstyle,
+    progress_to_csv,
+    reset_progress,
 )
-import pandas as pd
 from youtube_api import search_videos
 from coach import get_tips
 from meta import (
@@ -32,21 +38,19 @@ from auth import (
     get_user,
     update_playstyle,
     update_mute_toast,
+    load_credentials,
 )
-from analysis import (
-    classify_playstyle,
-    progress_to_csv,
-    reset_progress,
-)
-from deck_optimizer import smart_swap, upgrade_optimizer
+from deck_optimizer import smart_swap
 from digest import daily_digest_info
 from goals import check_badges, update_goal_tracker
 from gc_coach import start_run, record_match, summarize_run, get_gc_decks
 from player_watch import check_new_video, check_deck_change
-import json
+from merge_tactics import get_merge_leaderboard, card_tier_list
 
 init_db()
-creds = load_credentials()
+# This function should exist in your auth.py to load credentials
+# Example: creds = {'usernames': {'johndoe': {'email': 'johndoe@gmail.com', 'name': 'John Doe', 'password': 'hashed_password'}}}
+creds = load_credentials() 
 authenticator = stauth.Authenticate(creds, "crtool", "auth", cookie_expiry_days=7)
 name, auth_status, username = authenticator.login("Login", "main")
 
@@ -86,6 +90,7 @@ if tag:
     except Exception as e:
         st.error(f"Error fetching data: {e}")
     else:
+        record_daily_progress(battles, player.get("trophies", 0), player.get("leagueRank", 0))
         digest = daily_digest_info(tag)
         if digest and not mute_toast:
             msg = (

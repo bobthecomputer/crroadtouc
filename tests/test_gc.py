@@ -13,6 +13,7 @@ class GCTests(unittest.TestCase):
         self.assertEqual(summary['wins'], 1)
         os.remove(os.path.join("gc_runs", f"{run_id}.json"))
 
+
     def test_get_gc_decks_filter(self):
         sample = {
             "items": [
@@ -29,6 +30,5 @@ class GCTests(unittest.TestCase):
                 decks = gc_coach.get_gc_decks(limit=2, min_wr=0.45)
                 self.assertEqual(len(decks), 1)
                 self.assertEqual(decks[0]["cards"], ["Knight"])
-
 
 

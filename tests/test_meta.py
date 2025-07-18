@@ -39,5 +39,6 @@ class MetaTests(unittest.TestCase):
         self.assertAlmostEqual(data["avg_win_rate"], 10 / 15)
         self.assertEqual(data["decks"], [["A"]])
 
+
 if __name__ == '__main__':
     unittest.main()

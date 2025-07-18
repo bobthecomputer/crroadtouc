@@ -3,6 +3,7 @@ import os
 import time
 from typing import List, Dict
 from analysis import classify_playstyle
+import requests
 
 
 def _path(run_id: str) -> str:
@@ -55,7 +56,6 @@ def get_gc_decks(limit: int = 20, playstyle: str | None = None, min_wr: float = 
         raise RuntimeError("ROYALEAPI_TOKEN not set")
     url = "https://api.royaleapi.com/decks/popular?type=GC&time=7d&limit=100"
     headers = {"Authorization": f"Bearer {token}"}
-    import requests
 
     resp = requests.get(url, headers=headers, timeout=10)
     resp.raise_for_status()
@@ -87,4 +87,3 @@ def get_gc_decks(limit: int = 20, playstyle: str | None = None, min_wr: float = 
         if len(filtered) >= limit:
             break
     return filtered
-
