@@ -25,6 +25,10 @@ Template rapide:
 - Fait: batch delete API (`/jobs/batch_delete`, `/history/batch_delete`), front sélection multiple + suppression sélection pour jobs et historique; `npm install` frontend et `npm run build` OK.
 - À faire: éventuellement tests UI (Vitest/RTL), intégration modèle local (sans Inference API), gestion multi-suppression côté UI plus avancée.
 - Blocages/risques: synthèse réelle non testée (stub utilisé); pas de quotas si modèle local mais pipeline locale non branchée encore.
+### 2026-01-11 18:25
+- Fait: ajout mode TTS local optionnel (`ORATIO_TTS_PROVIDER=local`) avec pipeline transformers; docs mises à jour; tests UI (Vitest/RTL) ajoutés et passés; vitest config; batch delete front utilisable; npm install/build/test validés.
+- À faire: brancher réellement Kokoro/Parler localement (installer torch/transformers/numpy), améliorer gestion d’erreurs UI.
+- Blocages/risques: pipeline local dépend de deps lourdes (torch/transformers); audio réel non vérifié en local.
 ### 2026-01-11 17:14
 - Fait: persistance des jobs dans `outputs/jobs.json` (limite 300), nouveau endpoint `GET /jobs`, compteur dans `/health`; doc backend mise à jour; script d’install PowerShell ajouté.
 - À faire: UI pour lister/supprimer jobs/entrées d’historique, améliorer export (zip/download direct), tests à exécuter après install deps.

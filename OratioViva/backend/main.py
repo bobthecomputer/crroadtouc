@@ -28,6 +28,7 @@ JOBS_PATH = OUTPUT_DIR / "jobs.json"
 HF_TOKEN = os.getenv("HF_TOKEN") or os.getenv("HUGGINGFACEHUB_API_TOKEN")
 USE_STUB = os.getenv("ORATIO_TTS_STUB", "0") == "1"
 MAX_JOBS = int(os.getenv("ORATIO_JOBS_MAX", "300"))
+TTS_PROVIDER = os.getenv("ORATIO_TTS_PROVIDER", "inference")  # inference | local | stub
 
 
 class SynthesisRequest(BaseModel):
@@ -134,8 +135,9 @@ tts_service = TTSService(
     audio_dir=AUDIO_DIR,
     base_audio_url="/audio",
     hf_token=HF_TOKEN,
-    use_stub=USE_STUB,
+    use_stub=USE_STUB or TTS_PROVIDER == "stub",
     fallback_stub=True,
+    provider=TTS_PROVIDER,
 )
 job_store = JobStore(path=JOBS_PATH, max_items=MAX_JOBS)
 # Cleanup on startup (best-effort)

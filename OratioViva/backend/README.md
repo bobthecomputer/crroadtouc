@@ -16,6 +16,7 @@ pip install -r requirements.txt
 - `ORATIO_CLEAN_MAX_HOURS` (defaut 48): age max des WAV avant purge au startup/cleanup.
 - `ORATIO_CLEAN_MAX_HISTORY` (defaut 200): nombre max d'entrees conservees dans `history.json`.
 - `ORATIO_JOBS_MAX` (defaut 300, via code): jobs conserves dans `outputs/jobs.json`.
+- `ORATIO_TTS_PROVIDER` (`inference` | `local` | `stub`): choisir la source TTS. `local` attend transformers+numpy (+ torch) installes.
 
 ## Demarrer l'API
 ```
@@ -46,3 +47,12 @@ Les fichiers sont ecrits dans `outputs/audio/` et listes dans `outputs/history.j
 - Jobs gardes en memoire et persistés dans `outputs/jobs.json` (limite 300 par defaut).
 - Si l'API redemarre, les statuts sont recharges depuis `jobs.json` (les WAV anciens peuvent etre purges selon la config cleanup).
 - Pour un stockage plus robuste, on pourra remplacer par SQLite/Redis plus tard.
+
+## Mode TTS local (hors Inference API)
+- Passer `ORATIO_TTS_PROVIDER=local` pour activer le pipeline local.
+- Installer les deps (exemple) :
+  ```
+  pip install torch transformers numpy
+  ```
+- Modeles par defaut: `hexgrad/Kokoro-82M` et `parler-tts/parler-tts-mini-v1.1` via transformers `pipeline("text-to-speech")`.
+- Si les deps manquent, le service retombe sur le stub si `fallback_stub=True`.
